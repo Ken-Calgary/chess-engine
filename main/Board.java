@@ -14,14 +14,22 @@ import java.awt.*;
 import java.util.ArrayList;
 
 public class Board extends JPanel {
-    public int tileSize = 100;
+    public int tileSize = 85;
 
-    final int COLUMNS = 8;
-    final int ROWS = 8;
+    private final int COLUMNS = 8;
+    private final int ROWS = 8;
     
     ArrayList<Piece> pieceList = new ArrayList<>();
+    public Piece selectedPiece;
+    
+    Input input = new Input(this);
+    
     public Board() {
         this.setPreferredSize(new Dimension(COLUMNS*tileSize, ROWS*tileSize));
+        
+        this.addMouseListener(input);
+        this.addMouseMotionListener(input);
+        
         addBlackPieces();
         addWhitePieces();
     }
@@ -73,5 +81,45 @@ public class Board extends JPanel {
         for (Piece piece: pieceList) {
         	piece.paint(g2d);
         }
+    }
+    
+    public Piece getPiece(int column, int row) {
+    	for (Piece piece: pieceList) {
+    		if ((piece.column == column) && (piece.row == row)) {
+    			return piece;
+    		}
+    	}
+    	return null;
+    }
+    
+    public void makeMove(Move move) {
+    	move.piece.column = move.newColumn;
+    	move.piece.row = move.newRow;
+    	
+    	move.piece.xPos = move.newColumn * tileSize;
+    	move.piece.yPos = move.newRow * tileSize;
+    	
+    	capture(move);
+    }
+    
+    public void capture(Move move) {
+    	pieceList.remove(move.capture);
+    }
+    
+    public boolean isValidMove(Move move) {
+    	// Try capturing team piece, return false
+    	if (sameTeam(move.piece, move.capture)) {
+    		return false;
+    	}
+    	return true;
+    }
+    
+    // 
+    public boolean sameTeam(Piece p1, Piece p2) {
+    	if (p1 == null || p2 == null) {
+    		return false;
+    	}
+    	
+    	return p1.isWhite == p2.isWhite;
     }
 }
