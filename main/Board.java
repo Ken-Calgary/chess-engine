@@ -24,6 +24,8 @@ public class Board extends JPanel {
     
     Input input = new Input(this);
     
+    public int enPassantTile = -1;
+    
     public Board() {
         this.setPreferredSize(new Dimension(COLUMNS*tileSize, ROWS*tileSize));
         
@@ -32,6 +34,10 @@ public class Board extends JPanel {
         
         addBlackPieces();
         addWhitePieces();
+    }
+    
+    public int getTileNum(int column, int row) {
+    	return row * ROWS + column;
     }
 
     // Adds the all black pieces onto the board
@@ -67,10 +73,10 @@ public class Board extends JPanel {
     }
     
     
-    // Paints the board 
     public void paintComponent(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
 
+        // Paints the board 
         for (int r = 0; r < ROWS; r++) {
             for (int c = 0 ; c < COLUMNS; c++) {
                 g2d.setColor((c+r) % 2 == 0 ? new Color(227,198,181): new Color(157,105,53));
@@ -78,6 +84,20 @@ public class Board extends JPanel {
             }
         }
         
+        
+        // Highlights where the piece can move 
+        if (selectedPiece != null) {
+        	for (int r = 0; r < ROWS; r++) {
+            	for (int c = 0; c < COLUMNS; c++) {
+            		if (isValidMove(new Move(this, selectedPiece, c, r))) {
+            			g2d.setColor(new Color(68, 180, 57, 190));
+            			g2d.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+            		}
+            	}
+            }
+        }
+        
+        // Paints each piece
         for (Piece piece: pieceList) {
         	piece.paint(g2d);
         }
@@ -93,17 +113,81 @@ public class Board extends JPanel {
     }
     
     public void makeMove(Move move) {
+    	
+    	if (move.piece.name.equals("Pawn")) {
+    		movePawn(move);
+    	}
+    	
     	move.piece.column = move.newColumn;
     	move.piece.row = move.newRow;
     	
     	move.piece.xPos = move.newColumn * tileSize;
     	move.piece.yPos = move.newRow * tileSize;
     	
-    	capture(move);
+    	move.piece.isFirstMove = false;
+    	
+    	capture(move.capture);
     }
     
-    public void capture(Move move) {
-    	pieceList.remove(move.capture);
+    public void movePawn(Move move) {
+    	int colourIndex = move.piece.isWhite ? 1: -1;
+    	
+    	// en passant
+    	if (getTileNum(move.newColumn, move.newRow) == enPassantTile) {
+    		move.capture = getPiece(move.newColumn, move.newRow + colourIndex);
+    	}
+    	
+    	if (Math.abs(move.piece.row - move.newRow) == 2) {
+    		enPassantTile = getTileNum(move.newColumn, move.newRow + colourIndex);
+    	} else {
+    		enPassantTile = -1;
+    	}
+    	
+    	//promotions
+    	colourIndex = move.piece.isWhite ? 0 : 7;
+    	if(move.newRow == colourIndex) {
+    		promotePawn(move);
+    	}
+    	
+    	move.piece.column = move.newColumn;
+    	move.piece.row = move.newRow;
+    	
+    	move.piece.xPos = move.newColumn * tileSize;
+    	move.piece.yPos = move.newRow * tileSize;
+    	
+    	move.piece.isFirstMove = false;
+    	
+    	capture(move.capture);
+    }
+    
+    public void capture(Piece piece) {
+    	pieceList.remove(piece);
+    }
+    
+    private void promotePawn(Move move) {
+    	final String[] PIECEPROMOTIONS = {"Queen", "Bishop", "Knight", "Rook"};
+    	
+    	// Prompts the user to pick a piece to promote the pawn to
+        int promotedPiece = JOptionPane.showOptionDialog(null, "Select a piece to be promoted to",
+        		"Promotion", 0, JOptionPane.INFORMATION_MESSAGE, null, PIECEPROMOTIONS, null);
+        
+        // Add the selected piece onto the board
+        switch(promotedPiece) {
+	        case 0:
+	        	pieceList.add(new Queen(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+	        case 1:
+	        	pieceList.add(new Bishop(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+	        case 2:
+	        	pieceList.add(new Knight(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+	        case 3:
+	        	pieceList.add(new Rook(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+        }
+        
+    	capture(move.piece);
     }
     
     public boolean isValidMove(Move move) {
@@ -111,15 +195,34 @@ public class Board extends JPanel {
     	if (sameTeam(move.piece, move.capture)) {
     		return false;
     	}
+    	
+    	if (!move.piece.isValidMovement(move.newColumn, move.newRow)) {
+    		return false;
+    	}
+    	
+
+    	if (move.piece.moveCollidesWithPiece(move.newColumn, move.newRow)) {
+    		return false;
+    	}
+    	
     	return true;
     }
     
-    // 
     public boolean sameTeam(Piece p1, Piece p2) {
     	if (p1 == null || p2 == null) {
     		return false;
     	}
     	
     	return p1.isWhite == p2.isWhite;
+    }
+    
+    Piece findKing(boolean isWhite) {
+    	for (Piece piece: pieceList) {
+    		if(isWhite == piece.isWhite && piece.name.equals("King")) {
+    			return piece;
+    		}
+    	}
+    	
+    	return null;
     }
 }
