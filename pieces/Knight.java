@@ -16,4 +16,9 @@ public class Knight extends Piece{
 		// Grabs the knight in the "ChessPieces.png" and sizes it to fit the board
 		this.sprite = sheet.getSubimage(3 * sheetScale, isWhite ? 0 : sheetScale, sheetScale, sheetScale).getScaledInstance(board.tileSize, board.tileSize, BufferedImage.SCALE_SMOOTH);
 	}
+	
+	// Validates the knights' movement
+	public boolean isValidMovement(int column, int row) {
+		return Math.abs(column - this.column) * Math.abs(row - this.row) == 2;
+	}
 }
