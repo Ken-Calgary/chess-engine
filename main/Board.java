@@ -23,6 +23,7 @@ public class Board extends JPanel {
     public Piece selectedPiece;
     
     Input input = new Input(this);
+    CheckScanner checkScanner = new CheckScanner(this);
     
     public int enPassantTile = -1;
     
@@ -202,6 +203,11 @@ public class Board extends JPanel {
     	
 
     	if (move.piece.moveCollidesWithPiece(move.newColumn, move.newRow)) {
+    		return false;
+    	}
+    	
+    	// Checks if the king is in checked
+    	if (checkScanner.isKingChecked(move)) {
     		return false;
     	}
     	
