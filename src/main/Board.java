@@ -23,6 +23,9 @@ public class Board extends JPanel {
     public Piece selectedPiece;
     
     Input input = new Input(this);
+    CheckScanner checkScanner = new CheckScanner(this);
+    
+    public int enPassantTile = -1;
     
     public Board() {
         this.setPreferredSize(new Dimension(COLUMNS*tileSize, ROWS*tileSize));
@@ -32,6 +35,10 @@ public class Board extends JPanel {
         
         addBlackPieces();
         addWhitePieces();
+    }
+    
+    public int getTileNum(int column, int row) {
+    	return row * ROWS + column;
     }
 
     // Adds the all black pieces onto the board
@@ -107,6 +114,11 @@ public class Board extends JPanel {
     }
     
     public void makeMove(Move move) {
+    	
+    	if (move.piece.name.equals("Pawn")) {
+    		movePawn(move);
+    	}
+    	
     	move.piece.column = move.newColumn;
     	move.piece.row = move.newRow;
     	
@@ -115,11 +127,68 @@ public class Board extends JPanel {
     	
     	move.piece.isFirstMove = false;
     	
-    	capture(move);
+    	capture(move.capture);
     }
     
-    public void capture(Move move) {
-    	pieceList.remove(move.capture);
+    public void movePawn(Move move) {
+    	int colourIndex = move.piece.isWhite ? 1: -1;
+    	
+    	// en passant
+    	if (getTileNum(move.newColumn, move.newRow) == enPassantTile) {
+    		move.capture = getPiece(move.newColumn, move.newRow + colourIndex);
+    	}
+    	
+    	if (Math.abs(move.piece.row - move.newRow) == 2) {
+    		enPassantTile = getTileNum(move.newColumn, move.newRow + colourIndex);
+    	} else {
+    		enPassantTile = -1;
+    	}
+    	
+    	//promotions
+    	colourIndex = move.piece.isWhite ? 0 : 7;
+    	if(move.newRow == colourIndex) {
+    		promotePawn(move);
+    	}
+    	
+    	move.piece.column = move.newColumn;
+    	move.piece.row = move.newRow;
+    	
+    	move.piece.xPos = move.newColumn * tileSize;
+    	move.piece.yPos = move.newRow * tileSize;
+    	
+    	move.piece.isFirstMove = false;
+    	
+    	capture(move.capture);
+    }
+    
+    public void capture(Piece piece) {
+    	pieceList.remove(piece);
+    }
+    
+    private void promotePawn(Move move) {
+    	final String[] PIECEPROMOTIONS = {"Queen", "Bishop", "Knight", "Rook"};
+    	
+    	// Prompts the user to pick a piece to promote the pawn to
+        int promotedPiece = JOptionPane.showOptionDialog(null, "Select a piece to be promoted to",
+        		"Promotion", 0, JOptionPane.INFORMATION_MESSAGE, null, PIECEPROMOTIONS, null);
+        
+        // Add the selected piece onto the board
+        switch(promotedPiece) {
+	        case 0:
+	        	pieceList.add(new Queen(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+	        case 1:
+	        	pieceList.add(new Bishop(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+	        case 2:
+	        	pieceList.add(new Knight(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+	        case 3:
+	        	pieceList.add(new Rook(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+        }
+        
+    	capture(move.piece);
     }
     
     public boolean isValidMove(Move move) {
@@ -137,15 +206,29 @@ public class Board extends JPanel {
     		return false;
     	}
     	
+    	// Checks if the king is in checked
+    	if (checkScanner.isKingChecked(move)) {
+    		return false;
+    	}
+    	
     	return true;
     }
     
-    // 
     public boolean sameTeam(Piece p1, Piece p2) {
     	if (p1 == null || p2 == null) {
     		return false;
     	}
     	
     	return p1.isWhite == p2.isWhite;
+    }
+    
+    Piece findKing(boolean isWhite) {
+    	for (Piece piece: pieceList) {
+    		if(isWhite == piece.isWhite && piece.name.equals("King")) {
+    			return piece;
+    		}
+    	}
+    	
+    	return null;
     }
 }

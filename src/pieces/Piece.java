@@ -19,7 +19,7 @@ public class Piece {
 	public int value;
 	
 	
-	BufferedImage sheet;
+	public BufferedImage sheet;
 	
 	{
 		// Reads the image "ChessPieces.png" in the "res" folder 
@@ -32,7 +32,7 @@ public class Piece {
 	}
 	
 	// Splits the scale into 6, because of 6 unique pieces.
-	protected int sheetScale = sheet.getWidth() / 6;
+	public int sheetScale = sheet.getWidth() / 6;
 	
 	protected Image sprite;
 	protected Board board;

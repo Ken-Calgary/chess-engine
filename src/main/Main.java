@@ -7,6 +7,8 @@ public class Main {
     public static void main (String[] args) {
         // Creates the frame for the game
         JFrame frame = new JFrame();
+        
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.getContentPane().setBackground(new Color(0,0,0));
         frame.setLayout(new GridBagLayout());
         frame.setMinimumSize(new Dimension(1000, 1000));
