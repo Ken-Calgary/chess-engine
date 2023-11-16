@@ -3,6 +3,14 @@ package main;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ *  The entry point of the program that begins the chess simulation
+ *  
+ * @author Ken Liu
+ * @version 1.0
+ * @since 2023-11-14
+ */
+
 public class Main {
     public static void main (String[] args) {
         // Creates the frame for the game

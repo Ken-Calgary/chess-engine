@@ -13,20 +13,33 @@ import pieces.Rook;
 import java.awt.*;
 import java.util.ArrayList;
 
+/**
+ * The Board class creates the actual chess board. As well as,
+ * setting up all the pieces, interaction, and etc.
+ * 
+ * @author Ken Liu
+ * @version 1.0
+ * @since 2023-11-14
+ */
 public class Board extends JPanel {
     public int tileSize = 85;
 
     private final int COLUMNS = 8;
     private final int ROWS = 8;
     
-    ArrayList<Piece> pieceList = new ArrayList<>();
+    private ArrayList<Piece> pieceList = new ArrayList<>();
     public Piece selectedPiece;
     
     Input input = new Input(this);
-    CheckScanner checkScanner = new CheckScanner(this);
+    public CheckScanner checkScanner = new CheckScanner(this);
     
     public int enPassantTile = -1;
     
+    /**
+     * Board constructor to initialize the board. Sets up all the
+     * mouse actions, pieces and etc.
+     * 
+     */
     public Board() {
         this.setPreferredSize(new Dimension(COLUMNS*tileSize, ROWS*tileSize));
         
@@ -37,11 +50,18 @@ public class Board extends JPanel {
         addWhitePieces();
     }
     
+    /**
+     * Get the tile number of the piece
+     * 
+     * @return tileNumber
+     */
     public int getTileNum(int column, int row) {
     	return row * ROWS + column;
     }
 
-    // Adds the all black pieces onto the board
+    /**
+     * Adds all the black pieces onto the board
+     */
     public void addBlackPieces() {
     	pieceList.add(new King(this, 4, 0, false));
     	pieceList.add(new Queen(this, 3, 0, false));
@@ -57,7 +77,9 @@ public class Board extends JPanel {
     	}
     }
     
-	// Adds the all white pieces onto the board
+    /**
+     * Adds all the white pieces onto the board
+     */
     public void addWhitePieces() {
     	pieceList.add(new King(this, 4, 7, true));
     	pieceList.add(new Queen(this, 3, 7, true));
@@ -73,7 +95,194 @@ public class Board extends JPanel {
     	}
     }
     
+    /**
+     * Gets the selected piece
+     * 
+     * @param column the location of the piece in terms of 
+     * @param row
+     * @return piece
+     */
+    public Piece getPiece(int column, int row) {
+    	for (Piece piece: pieceList) {
+    		if ((piece.column == column) && (piece.row == row)) {
+    			return piece;
+    		}
+    	}
+    	return null;
+    }
     
+    public void makeMove(Move move) {
+    	
+    	if (move.piece.name.equals("Pawn")) {
+    		movePawn(move);
+    	} else if (move.piece.name.equals("King")) {
+    		moveKing((move));
+    	}
+    	
+    	move.piece.column = move.newColumn;
+    	move.piece.row = move.newRow;
+    	
+    	move.piece.xPos = move.newColumn * tileSize;
+    	move.piece.yPos = move.newRow * tileSize;
+    	
+    	move.piece.isFirstMove = false;
+    	
+    	capture(move.capture);
+    }
+    
+    /**
+     * Method specifically for pawn, as pawns have a few
+     * additional rules
+     * 
+     * @param move
+     */
+    public void movePawn(Move move) {
+    	int colourIndex = move.piece.isWhite ? 1: -1;
+    	
+    	// en passant
+    	if (getTileNum(move.newColumn, move.newRow) == enPassantTile) {
+    		move.capture = getPiece(move.newColumn, move.newRow + colourIndex);
+    	}
+    	
+    	if (Math.abs(move.piece.row - move.newRow) == 2) {
+    		enPassantTile = getTileNum(move.newColumn, move.newRow + colourIndex);
+    	} else {
+    		enPassantTile = -1;
+    	}
+    	
+    	//promotions
+    	colourIndex = move.piece.isWhite ? 0 : 7;
+    	if(move.newRow == colourIndex) {
+    		promotePawn(move);
+    	}
+    
+    }
+    
+    /**
+     * 
+     * 
+     * @param piece	Piece to be removed
+     */
+    public void capture(Piece piece) {
+    	pieceList.remove(piece);
+    }
+    
+    /**
+     * Method to promote pawns by prompting user to select 
+     * the piece they want to promote to
+     * 
+     * @param move	
+     */
+    private void promotePawn(Move move) {
+    	final String[] PIECEPROMOTIONS = {"Queen", "Bishop", "Knight", "Rook"};
+    	
+    	// Prompts the user to pick a piece to promote the pawn to
+        int promotedPiece = JOptionPane.showOptionDialog(null, "Select a piece to be promoted to",
+        		"Promotion", 0, JOptionPane.INFORMATION_MESSAGE, null, PIECEPROMOTIONS, null);
+        
+        // Add the selected piece onto the board
+        switch(promotedPiece) {
+	        case 0:
+	        	pieceList.add(new Queen(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+	        case 1:
+	        	pieceList.add(new Bishop(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+	        case 2:
+	        	pieceList.add(new Knight(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+	        case 3:
+	        	pieceList.add(new Rook(this, move.newColumn, move.newRow, move.piece.isWhite));
+	        	break;
+        }
+        
+    	capture(move.piece);
+    }
+    
+    /**
+     * Method to check if a move made was valid
+     * 
+     * @param move
+     * @return
+     */
+    public boolean isValidMove(Move move) {
+    	// Try capturing team piece, return false
+    	if (sameTeam(move.piece, move.capture)) {
+    		return false;
+    	}
+    	
+    	// Check if the movement is valid
+    	if (!move.piece.isValidMovement(move.newColumn, move.newRow)) {
+    		return false;
+    	}
+    	
+    	// Checks if the movement collides with another piece
+    	if (move.piece.moveCollidesWithPiece(move.newColumn, move.newRow)) {
+    		return false;
+    	}
+    	
+    	// Checks if the king is in checked
+    	if (checkScanner.isKingChecked(move)) {
+    		return false;
+    	}
+    	
+    	return true;
+    }
+    
+    /**
+     * Check if the compared pieces are the same color
+     * 
+     * @param p1 Selected Piece
+     * @param p2 Piece 
+     * @return	boolean
+     */
+    public boolean sameTeam(Piece p1, Piece p2) {
+    	if (p1 == null || p2 == null) {
+    		return false;
+    	}
+    	
+    	return p1.isWhite == p2.isWhite;
+    }
+    
+    /**
+     * Method to find where the king is located on the board
+     * 
+     * @param isWhite 
+     * @return Piece
+     */
+    public Piece findKing(boolean isWhite) {
+    	for (Piece piece: pieceList) {
+    		if(isWhite == piece.isWhite && piece.name.equals("King")) {
+    			return piece;
+    		}
+    	}
+    	
+    	return null;
+    }
+    
+    /**
+     * Method to move the King
+     * 
+     * @param move
+     */
+    private void moveKing(Move move) {
+    	if (Math.abs(move.piece.column - move.newColumn) == 2) {
+    		Piece rook;
+    		if (move.piece.column < move.newColumn) {
+    			rook = getPiece(7, move.piece.row);
+    			rook.column = 5;
+    		} else {
+    			rook = getPiece(0, move.piece.row);
+    			rook.column = 3;
+    		}
+    		
+    		rook.xPos = rook.column * tileSize;
+    	}
+    }
+    
+    /**
+     * Repaints the board after any actions made by the user
+     */
     public void paintComponent(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
 
@@ -102,133 +311,5 @@ public class Board extends JPanel {
         for (Piece piece: pieceList) {
         	piece.paint(g2d);
         }
-    }
-    
-    public Piece getPiece(int column, int row) {
-    	for (Piece piece: pieceList) {
-    		if ((piece.column == column) && (piece.row == row)) {
-    			return piece;
-    		}
-    	}
-    	return null;
-    }
-    
-    public void makeMove(Move move) {
-    	
-    	if (move.piece.name.equals("Pawn")) {
-    		movePawn(move);
-    	}
-    	
-    	move.piece.column = move.newColumn;
-    	move.piece.row = move.newRow;
-    	
-    	move.piece.xPos = move.newColumn * tileSize;
-    	move.piece.yPos = move.newRow * tileSize;
-    	
-    	move.piece.isFirstMove = false;
-    	
-    	capture(move.capture);
-    }
-    
-    public void movePawn(Move move) {
-    	int colourIndex = move.piece.isWhite ? 1: -1;
-    	
-    	// en passant
-    	if (getTileNum(move.newColumn, move.newRow) == enPassantTile) {
-    		move.capture = getPiece(move.newColumn, move.newRow + colourIndex);
-    	}
-    	
-    	if (Math.abs(move.piece.row - move.newRow) == 2) {
-    		enPassantTile = getTileNum(move.newColumn, move.newRow + colourIndex);
-    	} else {
-    		enPassantTile = -1;
-    	}
-    	
-    	//promotions
-    	colourIndex = move.piece.isWhite ? 0 : 7;
-    	if(move.newRow == colourIndex) {
-    		promotePawn(move);
-    	}
-    	
-    	move.piece.column = move.newColumn;
-    	move.piece.row = move.newRow;
-    	
-    	move.piece.xPos = move.newColumn * tileSize;
-    	move.piece.yPos = move.newRow * tileSize;
-    	
-    	move.piece.isFirstMove = false;
-    	
-    	capture(move.capture);
-    }
-    
-    public void capture(Piece piece) {
-    	pieceList.remove(piece);
-    }
-    
-    private void promotePawn(Move move) {
-    	final String[] PIECEPROMOTIONS = {"Queen", "Bishop", "Knight", "Rook"};
-    	
-    	// Prompts the user to pick a piece to promote the pawn to
-        int promotedPiece = JOptionPane.showOptionDialog(null, "Select a piece to be promoted to",
-        		"Promotion", 0, JOptionPane.INFORMATION_MESSAGE, null, PIECEPROMOTIONS, null);
-        
-        // Add the selected piece onto the board
-        switch(promotedPiece) {
-	        case 0:
-	        	pieceList.add(new Queen(this, move.newColumn, move.newRow, move.piece.isWhite));
-	        	break;
-	        case 1:
-	        	pieceList.add(new Bishop(this, move.newColumn, move.newRow, move.piece.isWhite));
-	        	break;
-	        case 2:
-	        	pieceList.add(new Knight(this, move.newColumn, move.newRow, move.piece.isWhite));
-	        	break;
-	        case 3:
-	        	pieceList.add(new Rook(this, move.newColumn, move.newRow, move.piece.isWhite));
-	        	break;
-        }
-        
-    	capture(move.piece);
-    }
-    
-    public boolean isValidMove(Move move) {
-    	// Try capturing team piece, return false
-    	if (sameTeam(move.piece, move.capture)) {
-    		return false;
-    	}
-    	
-    	if (!move.piece.isValidMovement(move.newColumn, move.newRow)) {
-    		return false;
-    	}
-    	
-
-    	if (move.piece.moveCollidesWithPiece(move.newColumn, move.newRow)) {
-    		return false;
-    	}
-    	
-    	// Checks if the king is in checked
-    	if (checkScanner.isKingChecked(move)) {
-    		return false;
-    	}
-    	
-    	return true;
-    }
-    
-    public boolean sameTeam(Piece p1, Piece p2) {
-    	if (p1 == null || p2 == null) {
-    		return false;
-    	}
-    	
-    	return p1.isWhite == p2.isWhite;
-    }
-    
-    Piece findKing(boolean isWhite) {
-    	for (Piece piece: pieceList) {
-    		if(isWhite == piece.isWhite && piece.name.equals("King")) {
-    			return piece;
-    		}
-    	}
-    	
-    	return null;
     }
 }

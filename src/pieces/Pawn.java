@@ -1,9 +1,24 @@
 package pieces;
 
 import java.awt.image.BufferedImage;
-
 import main.Board;
+
+/**
+ * Pawn class that extends the Piece abstract class
+ * 
+ * @author Ken Liu
+ * @version 1.0
+ * @since 2023-11-16
+ */
 public class Pawn extends Piece{
+	/**
+	 * Pawn constructor that creates a pawn piece
+	 * 
+	 * @param board
+	 * @param col
+	 * @param row
+	 * @param isWhite
+	 */
 	public Pawn(Board board, int col, int row, boolean isWhite) {
 		super(board);
 		this.column = col;
@@ -17,6 +32,13 @@ public class Pawn extends Piece{
 		this.sprite = sheet.getSubimage(5 * sheetScale, isWhite ? 0 : sheetScale, sheetScale, sheetScale).getScaledInstance(board.tileSize, board.tileSize, BufferedImage.SCALE_SMOOTH);
 	}
 	
+	/**
+	 * Checks if its a valid move made by Pawn
+	 * 
+	 * @param column
+	 * @param row
+	 * @return boolean
+	 */
 	public boolean isValidMovement(int column, int row) {
 		int colourIndex = isWhite ? 1 : -1;
 		

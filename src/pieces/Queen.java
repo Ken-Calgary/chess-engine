@@ -3,7 +3,23 @@ package pieces;
 import java.awt.image.BufferedImage;
 
 import main.Board;
+
+/**
+ * Knight class that extends the Piece abstract class
+ * 
+ * @author Ken Liu
+ * @version 1.0
+ * @since 2023-11-16
+ */
 public class Queen extends Piece{
+	/**
+	 * Queen constructor that creates a Queen piece
+	 * 
+	 * @param board Set the board as the parent
+	 * @param col	Set the Queen vertical position
+	 * @param row	Set the Queen horizontal position
+	 * @param isWhite	Set the color of the piece
+	 */
 	public Queen(Board board, int col, int row, boolean isWhite) {
 		super(board);
 		this.column = col;
@@ -17,10 +33,23 @@ public class Queen extends Piece{
 		this.sprite = sheet.getSubimage(1 * sheetScale, isWhite ? 0 : sheetScale, sheetScale, sheetScale).getScaledInstance(board.tileSize, board.tileSize, BufferedImage.SCALE_SMOOTH);
 	}
 	
+	/**
+	 * Checks if its a valid move made by Queen
+	 * 
+	 * @param column
+	 * @param row
+	 * @return boolean
+	 */
 	public boolean isValidMovement(int column, int row) {
 		return this.column == column || this.row == row || Math.abs(this.column - column) == Math.abs(this.row - row);
 	}
 	
+	/**
+	 * Checks if the Queen is being blocked by any piece
+	 * 
+	 * @param column	
+	 * @param row
+	 */
 	public boolean moveCollidesWithPiece(int column, int row) {
 		if (this.column == column || this.row == row) {
 			// checks left

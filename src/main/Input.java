@@ -7,11 +7,26 @@ import java.awt.event.MouseMotionListener;
 
 import pieces.Piece;
 
+/**
+ * The Input class takes care of the mouse interaction of 
+ * the user. Using the MouseAdapter library
+ * 
+ * @author Ken Liu
+ * @version 1.0
+ * @since 2023-11-14
+ */
 public class Input extends MouseAdapter{
-	Board board;
+	private Board board;
+	
+	// Input constructor to set the Board
 	public Input(Board board) {
 		this.board = board;
 	}
+	
+	
+	/**
+	 * Allows the user to select any piece
+	 */
 	@Override
 	public void mousePressed(MouseEvent e) {
 		int column = e.getX() / board.tileSize;
@@ -23,6 +38,9 @@ public class Input extends MouseAdapter{
 		}
 	}
 	
+	/**
+	 * Enables the user to move each piece
+	 */
 	@Override
 	public void mouseDragged(MouseEvent e) {
 		if (board.selectedPiece != null) {
@@ -34,6 +52,9 @@ public class Input extends MouseAdapter{
 		
 	}
 
+	/**
+	 * Moves piece after releasing mouse
+	 */
 	@Override
 	public void mouseReleased(MouseEvent e) {
 		int column = e.getX() / board.tileSize;
