@@ -9,7 +9,7 @@ import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-public class Piece {
+public abstract class Piece {
 	public int column, row;
 	public int xPos, yPos;
 	
