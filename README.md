@@ -1,4 +1,4 @@
-# Chess Engiine
+# Chess Engine
 A Chess Engine made in Java.
 
 # TODO for later
